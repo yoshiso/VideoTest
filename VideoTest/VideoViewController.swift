@@ -9,7 +9,7 @@
 import UIKit
 import AVFoundation
 
-let ViewControllerVideoPath = "http://192.168.59.103/movies/stream.m3u8"
+let ViewControllerVideoPath = "http://192.168.59.103/movies/stream.mp4"
 
 
 // KVO contexts
@@ -98,6 +98,12 @@ class YSSPlayerView: UIView {
         return AVPlayerLayer.self
     }
     
+    override func layoutSubviews() {
+        if let superview = self.superview {
+            self.frame = superview.bounds
+        }
+    }
+    
     // MARK - lifecycle
     
     convenience override init() {
@@ -115,28 +121,51 @@ class YSSPlayerView: UIView {
 
 }
 
+protocol YSSPlayerDelegate {
+    func PlayerReady(player: YSSPlayer)
+    func PlayerInterval(player: YSSPlayer)
+}
+
 class YSSPlayer: UIViewController {
     
+    var delegate: YSSPlayerDelegate?
+    
     var player: AVPlayer!
+    var playerAsset: AVAsset!
     var playerItem: AVPlayerItem?
     var playerView: YSSPlayerView!
-    var playerIndicatorView: UIView!
+    var playerTimeObserver: AnyObject?
     
     var playerState: YSSPlayerState!
-    private var bufferingStateData: YSSBufferingState!
-    var bufferingState: YSSBufferingState! {
-        set(newVal){
-            self.bufferingStateData = newVal
-           /* switch(newVal){
-            case .Unknown:
-                
-            case .Delayed:
-                
-            case .Ready:
-            }*/
-        }
+    var bufferingState: YSSBufferingState!
+    
+    var filepath: String!
+    var path: String! {
         get{
-            return self.bufferingStateData
+            return self.filepath
+        }
+        set(newVal){
+            self.filepath = newVal
+            self.setup(newVal)
+        }
+    }
+    
+    var duration: NSTimeInterval! {
+        get {
+            if let playerItem = self.playerItem {
+                return CMTimeGetSeconds(playerItem.duration)
+            }else{
+                return CMTimeGetSeconds(kCMTimeIndefinite)
+            }
+        }
+    }
+    var currentTime: NSTimeInterval! {
+        get {
+            if let time = self.player?.currentTime() {
+                return CMTimeGetSeconds(time)
+            }else{
+                return CMTimeGetSeconds(kCMTimeIndefinite)
+            }
         }
     }
     
@@ -151,15 +180,22 @@ class YSSPlayer: UIViewController {
         
         self.player.addObserver(self, forKeyPath: PlayerRateKey, options: .New | .Old, context: &PlayerObserverContext)
         
-        // debug for
         var timer = NSTimer.scheduledTimerWithTimeInterval(1.0, target: self, selector: "debug", userInfo: nil, repeats: true)
     }
     
     func debug() {
-        debugPrintln("Player:\(self.playerState), Buffer:\(self.bufferingState)")
+        debugPrintln("Player:\(self.playerState), Buffer:\(self.bufferingState), PlayerItem.KeepUp:\(self.playerItem?.playbackLikelyToKeepUp), PlayerItem.BufferEmpty:\(self.playerItem?.playbackBufferEmpty)")
+   
+        if let duration = self.playerItem?.duration {
+            debugPrintln("Duration: \(CMTimeGetSeconds(duration))")
+        }
+        if let current = self.player?.currentTime() {
+            debugPrintln("Current: \(CMTimeGetSeconds(current))")
+        }
     }
     
     deinit {
+        println("deinit")
         self.playerView.player = nil
         
         self.player.removeObserver(self, forKeyPath: PlayerRateKey, context: &PlayerObserverContext)
@@ -199,6 +235,7 @@ class YSSPlayer: UIViewController {
     }
     
     func pause() {
+        debugPrintln("pause")
         if self.playerState != .Playing {
             return
         }
@@ -207,6 +244,7 @@ class YSSPlayer: UIViewController {
     }
     
     func stop() {
+        debugPrintln("stop")
         if self.playerState == .Stopped {
             return
         }
@@ -214,9 +252,73 @@ class YSSPlayer: UIViewController {
         self.playerState = .Stopped
     }
     
-    func setupByUrl(urlString: String) {
-        let item = AVPlayerItem(URL: NSURL(string: urlString))
+    func seekTo(time: CMTime) {
+        self.player.seekToTime(time)
+    }
+    
+    // Setup Assets
+    
+    private func setup(urlString: String) {
+        
+        // Make sure everything is reset beforehand
+        if(self.playerState == .Playing){
+            self.pause()
+        }
+        // reset states
+        self.bufferingState = .Unknown
+        self.setupPlayerItem(nil)
+        
+        
+        var remoteUrl: NSURL? = NSURL(string: urlString)
+        if remoteUrl != nil && remoteUrl?.scheme != nil {
+            if remoteUrl!.pathExtension == "m3u8" {
+                setupByUrl(remoteUrl!)
+            }else{
+                if let asset = AVURLAsset(URL: remoteUrl, options: .None) {
+                    self.setupByAsset(asset)
+                }
+            }
+        } else {
+            var localURL: NSURL? = NSURL(fileURLWithPath: urlString)
+            if let asset = AVURLAsset(URL: localURL, options: .None) {
+                self.setupByAsset(asset)
+            }
+        }
+    }
+    
+    private func setupByUrl(url: NSURL) {
+        debugPrintln("setupByUrl: \(url)")
+        let item = AVPlayerItem(URL: url)
         setupPlayerItem(item)
+    }
+    
+    private func setupByAsset(asset: AVURLAsset) {
+        debugPrintln("setupByAsset: \(asset)")
+        self.playerAsset = asset
+        let keys: [String] = [PlayerTracksKey, PlayerPlayableKey, PlayerDurationKey]
+        asset.loadValuesAsynchronouslyForKeys(keys, completionHandler: { () -> Void in
+            dispatch_sync(dispatch_get_main_queue(), { () -> Void in
+                
+                for key in keys {
+                    var error: NSError?
+                    let status = self.playerAsset.statusOfValueForKey(key, error:&error)
+                    if status == .Failed {
+                        self.playerState = .Failed
+                        return
+                    }
+                }
+                
+                if self.playerAsset.playable.boolValue == false {
+                    self.playerState = .Failed
+                    return
+                }
+                
+                let playerItem: AVPlayerItem = AVPlayerItem(asset:self.playerAsset)
+                self.setupPlayerItem(playerItem)
+                
+            })
+        })
+        
     }
     
     private func setupPlayerItem(let item: AVPlayerItem?) {
@@ -229,6 +331,8 @@ class YSSPlayer: UIViewController {
             NSNotificationCenter.defaultCenter().removeObserver(self, name: AVPlayerItemDidPlayToEndTimeNotification, object: self.playerItem)
             NSNotificationCenter.defaultCenter().removeObserver(self, name: AVPlayerItemFailedToPlayToEndTimeNotification, object: self.playerItem)
             
+            self.player.removeTimeObserver(self.playerTimeObserver)
+            self.playerTimeObserver = nil
         }
         
         self.playerItem = item
@@ -237,10 +341,17 @@ class YSSPlayer: UIViewController {
             self.playerItem?.addObserver(self, forKeyPath: PlayerEmptyBufferKey, options: .New | .Old, context: &PlayerItemObserverContext)
             self.playerItem?.addObserver(self, forKeyPath: PlayerKeepUpKey, options: .New | .Old, context: &PlayerItemObserverContext)
             self.playerItem?.addObserver(self, forKeyPath: PlayerStatusKey, options: .New | .Old, context: &PlayerItemObserverContext)
-  
+            
             NSNotificationCenter.defaultCenter().addObserver(self, selector: "playerItemDidPlayToEndTime:", name: AVPlayerItemDidPlayToEndTimeNotification, object: self.playerItem)
             NSNotificationCenter.defaultCenter().addObserver(self, selector: "playerItemFailedToPlayToEndTime:", name: AVPlayerItemFailedToPlayToEndTimeNotification, object: self.playerItem)
-            
+        
+            self.playerTimeObserver = self.player.addPeriodicTimeObserverForInterval(CMTimeMakeWithSeconds(Float64(0.5), Int32(NSEC_PER_SEC)),
+                queue: dispatch_get_main_queue(),
+                usingBlock: {[weak self] (CMTime) -> Void in
+                    if let weakSelf = self {
+                        weakSelf.delegate?.PlayerInterval(weakSelf)
+                    }
+            })
         }
         
         self.player.replaceCurrentItemWithPlayerItem(self.playerItem)
@@ -313,7 +424,9 @@ class YSSPlayer: UIViewController {
             
         case (PlayerReadyForDisplay, &PlayerLayerObserverContext):
             if self.playerView.playerLayer.readyForDisplay {
-              debugPrintln("PlayerReadyForDisplay: \(self.playerView.playerLayer.readyForDisplay)")
+                debugPrintln("PlayerReadyForDisplay: \(self.playerView.playerLayer.readyForDisplay)")
+                debugPrintln("Duration: \(self.player?.currentItem.duration)")
+                self.delegate?.PlayerReady(self)
             }
         default:
             debugPrintln("other Event Happended")
@@ -329,25 +442,62 @@ class YSSPlayer: UIViewController {
 }
 
 
-
-class VideoViewController: UIViewController {
+class VideoViewController: UIViewController, YSSPlayerDelegate {
     
     // MARK: view lifecycle
     var player: YSSPlayer?
 
+    @IBOutlet weak var slider: UISlider!
+    @IBOutlet weak var vView: UIView!
+    @IBOutlet weak var timeLabel: UILabel!
+    
     override func viewDidLoad() {
         println("view did load")
         super.viewDidLoad()
         self.player = YSSPlayer()
-        self.player!.view.frame = self.view.bounds
-        self.player?.setupByUrl(ViewControllerVideoPath)
-        
-        self.view.addSubview(self.player!.view)
+        debugPrintln(self.vView.bounds)
+        self.player?.path = ViewControllerVideoPath // tmp
+        self.player?.delegate = self
+        self.vView.insertSubview(self.player!.view, atIndex: 0)
     }
     
     override func viewDidAppear(animated: Bool) {
         super.viewDidAppear(animated)
         self.player?.play()
     }
+    
+    func syncSlider() {
+        if let duration = self.player?.currentTime {
+            self.slider.setValue(Float(duration), animated: true)
+            
+            let min = NSString(format: "%d", Int(Int(duration)/60) )
+            let sec = NSString(format: "%02d", Int(Int(duration)%60) )
+            self.timeLabel.text = "\(min):\(sec)"
+        }
+    }
+    
+    // MARK - Actions
 
+    @IBAction func onChange(sender: UISlider) {
+        println(sender.value)
+        let time = CMTimeMakeWithSeconds(Float64(sender.value), Int32(NSEC_PER_SEC))
+        self.player?.seekTo(time)
+    }
+    
+    @IBAction func onStart(sender: AnyObject) {
+        self.player?.play()
+    }
+    @IBAction func onStop(sender: AnyObject) {
+        self.player?.stop()
+    }
+    
+    // MARK - YSSPlayerDelegate
+    func PlayerReady(player: YSSPlayer) {
+        slider.maximumValue =  Float(player.duration)
+        debugPrintln("Maximun: \(slider.maximumValue)")
+    }
+    
+    func PlayerInterval(player: YSSPlayer) {
+        self.syncSlider()
+    }
 }
