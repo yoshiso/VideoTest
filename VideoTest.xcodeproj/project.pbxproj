@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		35355D3C1ADBE85B001A3B12 /* VideoViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35355D3B1ADBE85A001A3B12 /* VideoViewController.swift */; };
 		354B12091ADB753300944699 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 354B12081ADB753300944699 /* AppDelegate.swift */; };
 		354B120B1ADB753300944699 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 354B120A1ADB753300944699 /* ViewController.swift */; };
 		354B120E1ADB753400944699 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 354B120C1ADB753400944699 /* Main.storyboard */; };
@@ -26,6 +27,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		35355D3B1ADBE85A001A3B12 /* VideoViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = VideoViewController.swift; sourceTree = "<group>"; };
 		354B12031ADB753300944699 /* VideoTest.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = VideoTest.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		354B12071ADB753300944699 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		354B12081ADB753300944699 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -79,6 +81,7 @@
 			children = (
 				354B12081ADB753300944699 /* AppDelegate.swift */,
 				354B120A1ADB753300944699 /* ViewController.swift */,
+				35355D3B1ADBE85A001A3B12 /* VideoViewController.swift */,
 				354B120C1ADB753400944699 /* Main.storyboard */,
 				354B120F1ADB753400944699 /* Images.xcassets */,
 				354B12111ADB753400944699 /* LaunchScreen.xib */,
@@ -214,6 +217,7 @@
 			files = (
 				354B120B1ADB753300944699 /* ViewController.swift in Sources */,
 				354B12091ADB753300944699 /* AppDelegate.swift in Sources */,
+				35355D3C1ADBE85B001A3B12 /* VideoViewController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -407,6 +411,7 @@
 				354B12241ADB753400944699 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		354B12251ADB753400944699 /* Build configuration list for PBXNativeTarget "VideoTestTests" */ = {
 			isa = XCConfigurationList;
@@ -415,6 +420,7 @@
 				354B12271ADB753400944699 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
