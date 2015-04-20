@@ -9,7 +9,16 @@
 import UIKit
 import AVFoundation
 
-let ViewControllerVideoPath = "http://192.168.59.103/movies/stream.mp4"
+var ViewControllerVideoPath:String {
+    get{
+        var path = (NSSearchPathForDirectoriesInDomains(.CachesDirectory, .UserDomainMask, true)[0] as String).stringByAppendingPathComponent("stream.mp4")
+        if NSFileManager.defaultManager().fileExistsAtPath(path) {
+            return path
+        }else {
+            return "\(Const().URL)/movies/stream.m3u8"
+        }
+    }
+}
 
 
 // KVO contexts
@@ -17,9 +26,6 @@ let ViewControllerVideoPath = "http://192.168.59.103/movies/stream.mp4"
 private var PlayerObserverContext = 0
 private var PlayerItemObserverContext = 0
 private var PlayerLayerObserverContext = 0
-
-// KVO playerLayer
-private let PlayerReadyForDisplay = "readyForDisplay"
 
 // KVO playerItem
 private let PlayerStatusKey      = "status"
@@ -133,11 +139,32 @@ class YSSPlayer: UIViewController {
     var player: AVPlayer!
     var playerAsset: AVAsset!
     var playerItem: AVPlayerItem?
-    var playerView: YSSPlayerView!
+    var playerView: YSSPlayerView! {
+        set(newVal){
+            self.view = newVal
+        }
+        get{
+            return self.view as YSSPlayerView
+        }
+    }
     var playerTimeObserver: AnyObject?
     
     var playerState: YSSPlayerState!
     var bufferingState: YSSBufferingState!
+    
+    // insted of using AVPlayerLayer.readyForDisplay, use this variable as visibility of
+    // Player View. The reason next. AVPlayerLayer.readyForDisplay not work if remote video source type is m3u8.
+    var readyForDisplay: Bool {
+        get{
+            return !self.playerView.playerLayer.hidden
+        }
+        set(newVal){
+            if(self.playerView.playerLayer.hidden == true && newVal == self.playerView.playerLayer.hidden){
+                self.delegate?.PlayerReady(self)
+            }
+            self.playerView.playerLayer.hidden = !newVal
+        }
+    }
     
     var filepath: String!
     var path: String! {
@@ -184,7 +211,7 @@ class YSSPlayer: UIViewController {
     }
     
     func debug() {
-        debugPrintln("Player:\(self.playerState), Buffer:\(self.bufferingState), PlayerItem.KeepUp:\(self.playerItem?.playbackLikelyToKeepUp), PlayerItem.BufferEmpty:\(self.playerItem?.playbackBufferEmpty)")
+        debugPrintln("Player:\(self.playerState), Buffer:\(self.bufferingState), PlayerItem.KeepUp:\(self.playerItem?.playbackLikelyToKeepUp), PlayerItem.BufferEmpty:\(self.playerItem?.playbackBufferEmpty), ReadyForDisplay: \(self.playerView.playerLayer.readyForDisplay)")
    
         if let duration = self.playerItem?.duration {
             debugPrintln("Duration: \(CMTimeGetSeconds(duration))")
@@ -200,8 +227,6 @@ class YSSPlayer: UIViewController {
         
         self.player.removeObserver(self, forKeyPath: PlayerRateKey, context: &PlayerObserverContext)
         
-        self.playerView.removeObserver(self, forKeyPath: PlayerReadyForDisplay, context: &PlayerLayerObserverContext)
-        
         self.player.pause()
         
         self.setupPlayerItem(nil)
@@ -210,12 +235,6 @@ class YSSPlayer: UIViewController {
     override func loadView() {
         self.playerView = YSSPlayerView(frame: CGRectZero)
         self.playerView.playerLayer.hidden = true
-        self.view = self.playerView
-        
-        self.playerView.layer.addObserver(self, forKeyPath: PlayerReadyForDisplay,
-                                                   options: .New | .Old,
-                                                   context: &PlayerLayerObserverContext)
-
     }
     
     override func viewDidDisappear(animated: Bool) {
@@ -272,15 +291,18 @@ class YSSPlayer: UIViewController {
         var remoteUrl: NSURL? = NSURL(string: urlString)
         if remoteUrl != nil && remoteUrl?.scheme != nil {
             if remoteUrl!.pathExtension == "m3u8" {
+                debugPrintln("HLS")
                 setupByUrl(remoteUrl!)
             }else{
                 if let asset = AVURLAsset(URL: remoteUrl, options: .None) {
+                    debugPrintln("mp4 Streaming")
                     self.setupByAsset(asset)
                 }
             }
         } else {
             var localURL: NSURL? = NSURL(fileURLWithPath: urlString)
             if let asset = AVURLAsset(URL: localURL, options: .None) {
+                debugPrintln("Local Streaming")
                 self.setupByAsset(asset)
             }
         }
@@ -395,7 +417,7 @@ class YSSPlayer: UIViewController {
             switch(status){
             case AVPlayerStatus.ReadyToPlay.rawValue:
                 self.playerView.player = self.player
-                self.playerView.playerLayer.hidden = false
+                self.readyForDisplay = true
             case AVPlayerStatus.Failed.rawValue:
                 self.playerState = .Failed
             default:
@@ -415,19 +437,13 @@ class YSSPlayer: UIViewController {
             switch (status) {
             case AVPlayerStatus.ReadyToPlay.rawValue:
                 self.playerView.playerLayer.player = self.player
-                self.playerView.playerLayer.hidden = false
+                self.readyForDisplay = true
             case AVPlayerStatus.Failed.rawValue:
                 self.playerState = .Failed
             default:
                 true
             }
             
-        case (PlayerReadyForDisplay, &PlayerLayerObserverContext):
-            if self.playerView.playerLayer.readyForDisplay {
-                debugPrintln("PlayerReadyForDisplay: \(self.playerView.playerLayer.readyForDisplay)")
-                debugPrintln("Duration: \(self.player?.currentItem.duration)")
-                self.delegate?.PlayerReady(self)
-            }
         default:
             debugPrintln("other Event Happended")
             super.observeValueForKeyPath(keyPath,
@@ -455,7 +471,7 @@ class VideoViewController: UIViewController, YSSPlayerDelegate {
         println("view did load")
         super.viewDidLoad()
         self.player = YSSPlayer()
-        debugPrintln(self.vView.bounds)
+        
         self.player?.path = ViewControllerVideoPath // tmp
         self.player?.delegate = self
         self.vView.insertSubview(self.player!.view, atIndex: 0)

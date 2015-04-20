@@ -14,6 +14,9 @@
 		354B12101ADB753400944699 /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 354B120F1ADB753400944699 /* Images.xcassets */; };
 		354B12131ADB753400944699 /* LaunchScreen.xib in Resources */ = {isa = PBXBuildFile; fileRef = 354B12111ADB753400944699 /* LaunchScreen.xib */; };
 		354B121F1ADB753400944699 /* VideoTestTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 354B121E1ADB753400944699 /* VideoTestTests.swift */; };
+		35EE6CFC1AE4F84B003DF77C /* TopViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35EE6CFB1AE4F84B003DF77C /* TopViewController.swift */; };
+		35EE6D2F1AE4FE00003DF77C /* Alamofire.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35EE6D2E1AE4FE00003DF77C /* Alamofire.swift */; };
+		35EE6D311AE51BD6003DF77C /* Const.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35EE6D301AE51BD6003DF77C /* Const.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -38,6 +41,9 @@
 		354B12181ADB753400944699 /* VideoTestTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = VideoTestTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		354B121D1ADB753400944699 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		354B121E1ADB753400944699 /* VideoTestTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoTestTests.swift; sourceTree = "<group>"; };
+		35EE6CFB1AE4F84B003DF77C /* TopViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TopViewController.swift; sourceTree = "<group>"; };
+		35EE6D2E1AE4FE00003DF77C /* Alamofire.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Alamofire.swift; path = Alamofire/Source/Alamofire.swift; sourceTree = "<group>"; };
+		35EE6D301AE51BD6003DF77C /* Const.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Const.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -61,6 +67,7 @@
 		354B11FA1ADB753300944699 = {
 			isa = PBXGroup;
 			children = (
+				35EE6D2E1AE4FE00003DF77C /* Alamofire.swift */,
 				354B12051ADB753300944699 /* VideoTest */,
 				354B121B1ADB753400944699 /* VideoTestTests */,
 				354B12041ADB753300944699 /* Products */,
@@ -79,8 +86,10 @@
 		354B12051ADB753300944699 /* VideoTest */ = {
 			isa = PBXGroup;
 			children = (
+				35EE6D301AE51BD6003DF77C /* Const.swift */,
 				354B12081ADB753300944699 /* AppDelegate.swift */,
 				354B120A1ADB753300944699 /* ViewController.swift */,
+				35EE6CFB1AE4F84B003DF77C /* TopViewController.swift */,
 				35355D3B1ADBE85A001A3B12 /* VideoViewController.swift */,
 				354B120C1ADB753400944699 /* Main.storyboard */,
 				354B120F1ADB753400944699 /* Images.xcassets */,
@@ -215,9 +224,12 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				35EE6CFC1AE4F84B003DF77C /* TopViewController.swift in Sources */,
+				35EE6D2F1AE4FE00003DF77C /* Alamofire.swift in Sources */,
 				354B120B1ADB753300944699 /* ViewController.swift in Sources */,
 				354B12091ADB753300944699 /* AppDelegate.swift in Sources */,
 				35355D3C1ADBE85B001A3B12 /* VideoViewController.swift in Sources */,
+				35EE6D311AE51BD6003DF77C /* Const.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -343,6 +355,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				INFOPLIST_FILE = VideoTest/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
@@ -353,6 +366,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				INFOPLIST_FILE = VideoTest/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
