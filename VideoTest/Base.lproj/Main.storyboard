@@ -43,6 +43,9 @@
                                 <state key="normal" title="Button3">
                                     <color key="titleShadowColor" white="0.5" alpha="1" colorSpace="calibratedWhite"/>
                                 </state>
+                                <connections>
+                                    <segue destination="YDl-5a-uwy" kind="show" id="0YI-4H-0lz"/>
+                                </connections>
                             </button>
                             <slider opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" minValue="0.0" maxValue="1" translatesAutoresizingMaskIntoConstraints="NO" id="Pfe-yU-oZH">
                                 <rect key="frame" x="19" y="647" width="317" height="31"/>
@@ -89,7 +92,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="dkx-z0-nzr" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="551" y="281"/>
+            <point key="canvasLocation" x="635" y="276"/>
         </scene>
         <!--Top View Controller-->
         <scene sceneID="0uW-kp-5Qg">

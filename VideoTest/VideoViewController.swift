@@ -22,7 +22,6 @@ var ViewControllerVideoPath:String {
 
 
 // KVO contexts
-
 private var PlayerObserverContext = 0
 private var PlayerItemObserverContext = 0
 private var PlayerLayerObserverContext = 0
@@ -31,6 +30,9 @@ private var PlayerLayerObserverContext = 0
 private let PlayerStatusKey      = "status"
 private let PlayerEmptyBufferKey = "playbackBufferEmpty"
 private let PlayerKeepUpKey      = "playbackLikelyToKeepUp"
+
+// KVO playerLayer
+private let PlayerReadyForDisplay = "readyForDisplay"
 
 // KVO player
 private let PlayerTracksKey   = "tracks"
@@ -152,20 +154,6 @@ class YSSPlayer: UIViewController {
     var playerState: YSSPlayerState!
     var bufferingState: YSSBufferingState!
     
-    // insted of using AVPlayerLayer.readyForDisplay, use this variable as visibility of
-    // Player View. The reason next. AVPlayerLayer.readyForDisplay not work if remote video source type is m3u8.
-    var readyForDisplay: Bool {
-        get{
-            return !self.playerView.playerLayer.hidden
-        }
-        set(newVal){
-            if(self.playerView.playerLayer.hidden == true && newVal == self.playerView.playerLayer.hidden){
-                self.delegate?.PlayerReady(self)
-            }
-            self.playerView.playerLayer.hidden = !newVal
-        }
-    }
-    
     var filepath: String!
     var path: String! {
         get{
@@ -199,14 +187,22 @@ class YSSPlayer: UIViewController {
     // MARK - lifecycle
     
     override convenience init() {
+        debugPrintln("init")
         self.init(nibName: nil, bundle: nil)
         self.player = AVPlayer()
         self.player.actionAtItemEnd = .Pause
+        
+        self.playerView = YSSPlayerView(frame: CGRectZero)
+        self.playerView.playerLayer.hidden = true
+        self.playerView.player = self.player
+        
         self.playerState = .Stopped
         self.bufferingState = .Unknown
         
         self.player.addObserver(self, forKeyPath: PlayerRateKey, options: .New | .Old, context: &PlayerObserverContext)
-        
+        self.playerView.layer.addObserver(self, forKeyPath: PlayerReadyForDisplay,
+            options: .New | .Old,
+            context: &PlayerLayerObserverContext)
         var timer = NSTimer.scheduledTimerWithTimeInterval(1.0, target: self, selector: "debug", userInfo: nil, repeats: true)
     }
     
@@ -227,17 +223,15 @@ class YSSPlayer: UIViewController {
         
         self.player.removeObserver(self, forKeyPath: PlayerRateKey, context: &PlayerObserverContext)
         
+        self.playerView.removeObserver(self, forKeyPath: PlayerReadyForDisplay, context: &PlayerLayerObserverContext)
+        
         self.player.pause()
         
         self.setupPlayerItem(nil)
     }
     
-    override func loadView() {
-        self.playerView = YSSPlayerView(frame: CGRectZero)
-        self.playerView.playerLayer.hidden = true
-    }
-    
     override func viewDidDisappear(animated: Bool) {
+        debugPrintln("view did disappear")
         super.viewDidDisappear(animated)
         
         if self.playerState == .Playing {
@@ -416,8 +410,7 @@ class YSSPlayer: UIViewController {
             
             switch(status){
             case AVPlayerStatus.ReadyToPlay.rawValue:
-                self.playerView.player = self.player
-                self.readyForDisplay = true
+                true
             case AVPlayerStatus.Failed.rawValue:
                 self.playerState = .Failed
             default:
@@ -436,14 +429,19 @@ class YSSPlayer: UIViewController {
             
             switch (status) {
             case AVPlayerStatus.ReadyToPlay.rawValue:
-                self.playerView.playerLayer.player = self.player
-                self.readyForDisplay = true
+                true
             case AVPlayerStatus.Failed.rawValue:
                 self.playerState = .Failed
             default:
                 true
             }
-            
+        case (PlayerReadyForDisplay, &PlayerLayerObserverContext):
+            if self.playerView.playerLayer.readyForDisplay {
+                debugPrintln("PlayerReadyForDisplay: \(self.playerView.playerLayer.readyForDisplay)")
+                debugPrintln("Duration: \(self.player?.currentItem.duration)")
+                self.playerView.playerLayer.hidden = false
+                self.delegate?.PlayerReady(self)
+            }
         default:
             debugPrintln("other Event Happended")
             super.observeValueForKeyPath(keyPath,
@@ -495,9 +493,10 @@ class VideoViewController: UIViewController, YSSPlayerDelegate {
     // MARK - Actions
 
     @IBAction func onChange(sender: UISlider) {
-        println(sender.value)
-        let time = CMTimeMakeWithSeconds(Float64(sender.value), Int32(NSEC_PER_SEC))
-        self.player?.seekTo(time)
+        dispatch_async(dispatch_get_global_queue(Int(DISPATCH_QUEUE_PRIORITY_DEFAULT), 0), {
+            let time = CMTimeMakeWithSeconds(Float64(sender.value), Int32(NSEC_PER_SEC))
+            self.player?.seekTo(time)
+        })
     }
     
     @IBAction func onStart(sender: AnyObject) {
