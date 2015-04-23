@@ -12,7 +12,7 @@ class TopViewController: UIViewController {
     
     var cachePath: NSURL {
         get{
-            return (NSFileManager.defaultManager().URLsForDirectory(.CachesDirectory, inDomains: .UserDomainMask)[0]) as NSURL
+            return (NSFileManager.defaultManager().URLsForDirectory(.CachesDirectory, inDomains: .UserDomainMask)[0]) as! NSURL
         }
     }
     
@@ -35,7 +35,7 @@ class TopViewController: UIViewController {
             let prog = Float(totalreads) / Float(expectedtotalreads)
             println("Progress: \(prog)")
         }.response { (request, response, _, error) in
-            var path = (NSSearchPathForDirectoriesInDomains(.CachesDirectory, .UserDomainMask, true)[0] as String).stringByAppendingPathComponent("stream.mp4")
+            var path = (NSSearchPathForDirectoriesInDomains(.CachesDirectory, .UserDomainMask, true)[0] as! String).stringByAppendingPathComponent("stream.mp4")
             let status = NSFileManager.defaultManager().fileExistsAtPath(path)
             println("Exist Cache File?: \(status)")
         }
@@ -44,7 +44,7 @@ class TopViewController: UIViewController {
     
     func del(){
         let fm = NSFileManager.defaultManager()
-        var path = (NSSearchPathForDirectoriesInDomains(.CachesDirectory, .UserDomainMask, true)[0] as String).stringByAppendingPathComponent("stream.mp4")
+        var path = (NSSearchPathForDirectoriesInDomains(.CachesDirectory, .UserDomainMask, true)[0] as! String).stringByAppendingPathComponent("stream.mp4")
         if fm.fileExistsAtPath(path) {
             var err: NSError? = nil
             fm.removeItemAtPath(path, error: &err)
@@ -60,7 +60,7 @@ class TopViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        var path = (NSSearchPathForDirectoriesInDomains(.CachesDirectory, .UserDomainMask, true)[0] as String).stringByAppendingPathComponent("stream.mp4")
+        var path = (NSSearchPathForDirectoriesInDomains(.CachesDirectory, .UserDomainMask, true)[0] as! String).stringByAppendingPathComponent("stream.mp4")
         let status = NSFileManager.defaultManager().fileExistsAtPath(path)
         println("Exist Cache File?: \(status)")
         

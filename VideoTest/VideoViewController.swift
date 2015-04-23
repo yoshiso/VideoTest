@@ -11,7 +11,7 @@ import AVFoundation
 
 var ViewControllerVideoPath:String {
     get{
-        var path = (NSSearchPathForDirectoriesInDomains(.CachesDirectory, .UserDomainMask, true)[0] as String).stringByAppendingPathComponent("stream.mp4")
+        var path = (NSSearchPathForDirectoriesInDomains(.CachesDirectory, .UserDomainMask, true)[0] as! String).stringByAppendingPathComponent("stream.mp4")
         if NSFileManager.defaultManager().fileExistsAtPath(path) {
             return path
         }else {
@@ -86,11 +86,11 @@ class YSSPlayerView: UIView {
     
     var player: AVPlayer! {
         get {
-            let layer: AVPlayerLayer = self.layer as AVPlayerLayer
+            let layer: AVPlayerLayer = self.layer as! AVPlayerLayer
             return layer.player
         }
         set(newVal) {
-            let layer: AVPlayerLayer = self.layer as AVPlayerLayer
+            let layer: AVPlayerLayer = self.layer as! AVPlayerLayer
             layer.player = newVal
             layer.videoGravity = AVLayerVideoGravityResizeAspect // auto resize
         }
@@ -98,7 +98,7 @@ class YSSPlayerView: UIView {
     
     var playerLayer: AVPlayerLayer! {
         get {
-            return (self.layer as AVPlayerLayer)
+            return (self.layer as! AVPlayerLayer)
         }
     }
     
@@ -114,7 +114,7 @@ class YSSPlayerView: UIView {
     
     // MARK - lifecycle
     
-    convenience override init() {
+    convenience init() {
         self.init(frame: CGRectZero)
     }
     
@@ -146,7 +146,7 @@ class YSSPlayer: UIViewController {
             self.view = newVal
         }
         get{
-            return self.view as YSSPlayerView
+            return self.view as! YSSPlayerView
         }
     }
     var playerTimeObserver: AnyObject?
@@ -186,7 +186,7 @@ class YSSPlayer: UIViewController {
     
     // MARK - lifecycle
     
-    override convenience init() {
+    convenience init() {
         debugPrintln("init")
         self.init(nibName: nil, bundle: nil)
         self.player = AVPlayer()
@@ -406,7 +406,7 @@ class YSSPlayer: UIViewController {
                 }
             }
             
-            let status = (change[NSKeyValueChangeNewKey] as NSNumber).integerValue as AVPlayerStatus.RawValue
+            let status = (change[NSKeyValueChangeNewKey] as! NSNumber).integerValue as AVPlayerStatus.RawValue
             
             switch(status){
             case AVPlayerStatus.ReadyToPlay.rawValue:
@@ -425,7 +425,7 @@ class YSSPlayer: UIViewController {
                 }
             }
             
-            let status = (change[NSKeyValueChangeNewKey] as NSNumber).integerValue as AVPlayerStatus.RawValue
+            let status = (change[NSKeyValueChangeNewKey] as! NSNumber).integerValue as AVPlayerStatus.RawValue
             
             switch (status) {
             case AVPlayerStatus.ReadyToPlay.rawValue:

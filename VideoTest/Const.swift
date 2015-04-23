@@ -10,5 +10,5 @@ import Foundation
 
 
 class Const {
-    let URL = "http://128.199.219.52"
+    let URL = "http://192.168.59.103"
 }
