@@ -500,12 +500,13 @@ class VideoViewController: UIViewController, YSSPlayerDelegate {
     }
     
     @IBAction func onStart(sender: AnyObject) {
-        self.player?.play()
+        if self.player?.playerState == .Stopped {
+            self.player?.play()
+        }else{
+            self.player?.stop()
+        }
     }
-    @IBAction func onStop(sender: AnyObject) {
-        self.player?.stop()
-    }
-    
+
     // MARK - YSSPlayerDelegate
     func PlayerReady(player: YSSPlayer) {
         slider.maximumValue =  Float(player.duration)
